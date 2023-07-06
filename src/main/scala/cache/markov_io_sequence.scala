@@ -41,28 +41,19 @@ class Cache1Tester(dut: Cache1) extends PeekPokeTester(dut) {
       // mark the request as valid and response as ready
       poke(dut.io.request.valid, false)
       poke(dut.io.response.ready, true)
+class SequentialAccess extends Module {
+  val io = IO(new Bundle {
+    val addr = Output(UInt(32.W))
+    val data = Input(UInt(32.W))
+  })
 
-      // wait until the response is valid
-      while (peek(dut.io.response.valid) == BigInt(0)) {
-        step(1)
-      }
-      
-      // TODO: you can print or expect (validate) the response here
-
-      step(1)
-
-      // mark the response as not ready again
-      poke(dut.io.response.ready, false)
-    }
-
-    val numHits = peek(dut.io.numHits)
-    val numCycles = peek(dut.io.numCycles)
-
-    scala.Predef.printf(s"[Tester] numAccesses: ${numAccesses}, numHits: ${numHits}, hitRatio: ${numHits.toDouble / numAccesses}, numCycles: ${numCycles}\n");
-}
-
-object Cache1Tester extends App {
-  chisel3.iotesters.Driver(() => new Cache1(), "treadle") { dut =>
-    new Cache1Tester(dut)
+  // 访问地址从0x00000000到0x00001000
+  val addrReg = RegInit(0.U(32.W))
+  when(addrReg < 4096.U) {
+    io.addr := addrReg
+    addrReg := addrReg + 4.U
   }
+
+  // 输出输入数据
+  printf("Data: %x\n", io.data)
 }
